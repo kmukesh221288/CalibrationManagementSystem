@@ -1,3 +1,6 @@
+import tkinter as tk
+from tkinter import ttk
+
 import customtkinter as ctk
 
 from services.instrument_service import InstrumentService
@@ -5,139 +8,148 @@ from ui.add_instrument_dialog import AddInstrumentDialog
 
 
 class InstrumentPage(ctk.CTkFrame):
-
     def __init__(self, parent):
         super().__init__(parent)
 
         self.service = InstrumentService()
+        self.columns = [
+            ("machine_code", "Machine Code", 140),
+            ("machine_name", "Machine Name", 220),
+            ("instrument_code", "Instrument Code", 160),
+            ("instrument_name", "Instrument Name", 220),
+            ("department", "Department", 140),
+            ("frequency", "Frequency", 120),
+            ("status", "Status", 110),
+        ]
 
         self.build_ui()
+        self.load_table()
 
     def build_ui(self):
+        style = ttk.Style()
+        style.theme_use("clam")
+        style.configure(
+            "Treeview",
+            rowheight=28,
+            font=("Segoe UI", 10),
+        )
+        style.configure(
+            "Treeview.Heading",
+            font=("Segoe UI", 10, "bold"),
+        )
 
         title = ctk.CTkLabel(
             self,
             text="Instrument Register",
-            font=("Arial", 30, "bold")
+            font=("Segoe UI", 26, "bold"),
         )
-
         title.pack(anchor="w", padx=20, pady=(20, 10))
 
-        # ============================
-        # Top Frame
-        # ============================
+        top_frame = ctk.CTkFrame(self)
+        top_frame.pack(fill="x", padx=20, pady=(0, 10))
 
-        top = ctk.CTkFrame(self)
-        top.pack(fill="x", padx=20)
-
-        self.search = ctk.CTkEntry(
-            top,
-            width=350,
-            placeholder_text="Search Machine / Instrument..."
+        self.search_entry = ctk.CTkEntry(
+            top_frame,
+            width=360,
+            placeholder_text="🔍 Search...",
         )
-
-        self.search.pack(side="left", padx=5)
-
-        # Live Search
-        self.search.bind("<KeyRelease>", self.search_data)
+        self.search_entry.grid(row=0, column=0, sticky="w", padx=(10, 8), pady=10)
+        self.search_entry.bind("<KeyRelease>", self.search_data)
 
         self.refresh_button = ctk.CTkButton(
-            top,
+            top_frame,
             text="Refresh",
-            command=self.load_table
+            width=110,
+            command=self.load_table,
         )
-
-        self.refresh_button.pack(side="right", padx=5)
+        self.refresh_button.grid(row=0, column=1, sticky="e", padx=(0, 8), pady=10)
 
         self.add_button = ctk.CTkButton(
-            top,
+            top_frame,
             text="+ Add Instrument",
-            command=self.open_add_dialog
+            width=150,
+            command=self.open_add_dialog,
+        )
+        self.add_button.grid(row=0, column=2, sticky="e", padx=(0, 8), pady=10)
+
+        self.edit_button = ctk.CTkButton(
+            top_frame,
+            text="Edit Instrument",
+            width=140,
+            state="disabled",
+        )
+        self.edit_button.grid(row=0, column=3, sticky="e", padx=(0, 8), pady=10)
+
+        self.delete_button = ctk.CTkButton(
+            top_frame,
+            text="Delete Instrument",
+            width=140,
+            state="disabled",
+        )
+        self.delete_button.grid(row=0, column=4, sticky="e", padx=(0, 10), pady=10)
+
+        top_frame.grid_columnconfigure(0, weight=1)
+
+        table_container = ctk.CTkFrame(self)
+        table_container.pack(fill="both", expand=True, padx=20, pady=(0, 20))
+
+        self.tree = ttk.Treeview(
+            table_container,
+            columns=[column[0] for column in self.columns],
+            show="headings",
+            selectmode="browse",
         )
 
-        self.add_button.pack(side="right", padx=5)
+        for key, heading, width in self.columns:
+            self.tree.heading(key, text=heading)
+            self.tree.column(key, width=width, anchor="w", stretch=False)
 
-        # ============================
-        # Table
-        # ============================
+        self.tree.tag_configure("evenrow", background="#ffffff")
+        self.tree.tag_configure("oddrow", background="#f2f4f8")
 
-        self.table = ctk.CTkTextbox(
-            self,
-            font=("Consolas", 13)
+        vertical_scroll = ttk.Scrollbar(
+            table_container,
+            orient="vertical",
+            command=self.tree.yview,
+        )
+        horizontal_scroll = ttk.Scrollbar(
+            table_container,
+            orient="horizontal",
+            command=self.tree.xview,
         )
 
-        self.table.pack(
-            fill="both",
-            expand=True,
-            padx=20,
-            pady=20
+        self.tree.configure(
+            yscrollcommand=vertical_scroll.set,
+            xscrollcommand=horizontal_scroll.set,
         )
 
-        self.load_table()
+        self.tree.grid(row=0, column=0, sticky="nsew")
+        vertical_scroll.grid(row=0, column=1, sticky="ns")
+        horizontal_scroll.grid(row=1, column=0, sticky="ew")
 
-    # ======================================
+        table_container.grid_rowconfigure(0, weight=1)
+        table_container.grid_columnconfigure(0, weight=1)
 
     def open_add_dialog(self):
-
         dialog = AddInstrumentDialog(self)
-
         self.wait_window(dialog)
-
         self.load_table()
 
-    # ======================================
-
     def load_table(self):
-
         rows = self.service.get_all_instruments()
-
         self.display_rows(rows)
-
-    # ======================================
 
     def search_data(self, event=None):
-
-        text = self.search.get().strip()
-
-        if text == "":
-
+        search_text = self.search_entry.get().strip()
+        if search_text == "":
             rows = self.service.get_all_instruments()
-
         else:
-
-            rows = self.service.search_instruments(text)
-
+            rows = self.service.search_instruments(search_text)
         self.display_rows(rows)
 
-    # ======================================
-
     def display_rows(self, rows):
+        self.tree.delete(*self.tree.get_children())
 
-        self.table.delete("1.0", "end")
-
-        header = (
-            f"{'Machine Code':<15}"
-            f"{'Machine Name':<30}"
-            f"{'Instrument Code':<20}"
-            f"{'Instrument Name':<30}"
-            f"{'Department':<15}"
-            f"{'Frequency':<15}"
-            f"{'Status'}\n"
-        )
-
-        self.table.insert("end", header)
-        self.table.insert("end", "=" * 150 + "\n")
-
-        for row in rows:
-
-            line = (
-                f"{row[0]:<15}"
-                f"{row[1]:<30}"
-                f"{row[2]:<20}"
-                f"{row[3]:<30}"
-                f"{row[4]:<15}"
-                f"{row[5]:<15}"
-                f"{row[6]}\n"
-            )
-
-            self.table.insert("end", line)
+        for index, row in enumerate(rows):
+            row_tag = "evenrow" if index % 2 == 0 else "oddrow"
+            self.tree.insert("", "end", values=row, tags=(row_tag,))
