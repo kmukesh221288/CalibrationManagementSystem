@@ -6,6 +6,10 @@ class InstrumentService:
     def __init__(self):
         self.db = Database()
 
+    # =========================================================
+    # Get All Instruments
+    # =========================================================
+
     def get_all_instruments(self):
 
         cursor = self.db.cursor
@@ -31,7 +35,57 @@ class InstrumentService:
 
         return cursor.fetchall()
 
-    # -----------------------------------------------------
+    # =========================================================
+    # Search Instruments
+    # =========================================================
+
+    def search_instruments(self, search_text):
+
+        cursor = self.db.cursor
+
+        keyword = f"%{search_text}%"
+
+        cursor.execute("""
+        SELECT
+
+            m.machine_code,
+            m.machine_name,
+            i.instrument_code,
+            i.instrument_name,
+            m.department,
+            i.frequency,
+            m.status
+
+        FROM instruments i
+
+        JOIN machines m
+            ON i.machine_id = m.id
+
+        WHERE
+
+            m.machine_code LIKE ?
+            OR m.machine_name LIKE ?
+            OR i.instrument_code LIKE ?
+            OR i.instrument_name LIKE ?
+            OR m.department LIKE ?
+            OR i.frequency LIKE ?
+
+        ORDER BY m.machine_name
+        """,
+        (
+            keyword,
+            keyword,
+            keyword,
+            keyword,
+            keyword,
+            keyword
+        ))
+
+        return cursor.fetchall()
+
+    # =========================================================
+    # Add Instrument
+    # =========================================================
 
     def add_instrument(
         self,
@@ -43,9 +97,7 @@ class InstrumentService:
         frequency
     ):
 
-        cursor = self.db.cursor
-
-        # Check machine
+        cursor = self.db.cursor()
 
         cursor.execute(
             """
@@ -69,9 +121,7 @@ class InstrumentService:
                 INSERT INTO machines(
 
                     machine_code,
-
                     machine_name,
-
                     department
 
                 )
@@ -87,8 +137,6 @@ class InstrumentService:
             )
 
             machine_id = cursor.lastrowid
-
-        # Check Instrument
 
         cursor.execute(
             """
@@ -110,11 +158,8 @@ class InstrumentService:
             INSERT INTO instruments(
 
                 machine_id,
-
                 instrument_code,
-
                 instrument_name,
-
                 frequency
 
             )
@@ -131,6 +176,8 @@ class InstrumentService:
         )
 
         self.db.conn.commit()
+
+    # =========================================================
 
     def close(self):
 

@@ -23,16 +23,31 @@ class InstrumentPage(ctk.CTkFrame):
 
         title.pack(anchor="w", padx=20, pady=(20, 10))
 
+        # ============================
+        # Top Frame
+        # ============================
+
         top = ctk.CTkFrame(self)
         top.pack(fill="x", padx=20)
 
         self.search = ctk.CTkEntry(
             top,
-            width=300,
-            placeholder_text="Search..."
+            width=350,
+            placeholder_text="Search Machine / Instrument..."
         )
 
         self.search.pack(side="left", padx=5)
+
+        # Live Search
+        self.search.bind("<KeyRelease>", self.search_data)
+
+        self.refresh_button = ctk.CTkButton(
+            top,
+            text="Refresh",
+            command=self.load_table
+        )
+
+        self.refresh_button.pack(side="right", padx=5)
 
         self.add_button = ctk.CTkButton(
             top,
@@ -42,13 +57,9 @@ class InstrumentPage(ctk.CTkFrame):
 
         self.add_button.pack(side="right", padx=5)
 
-        self.refresh_button = ctk.CTkButton(
-            top,
-            text="Refresh",
-            command=self.load_table
-        )
-
-        self.refresh_button.pack(side="right", padx=5)
+        # ============================
+        # Table
+        # ============================
 
         self.table = ctk.CTkTextbox(
             self,
@@ -64,11 +75,43 @@ class InstrumentPage(ctk.CTkFrame):
 
         self.load_table()
 
+    # ======================================
+
     def open_add_dialog(self):
 
-        AddInstrumentDialog(self)
+        dialog = AddInstrumentDialog(self)
+
+        self.wait_window(dialog)
+
+        self.load_table()
+
+    # ======================================
 
     def load_table(self):
+
+        rows = self.service.get_all_instruments()
+
+        self.display_rows(rows)
+
+    # ======================================
+
+    def search_data(self, event=None):
+
+        text = self.search.get().strip()
+
+        if text == "":
+
+            rows = self.service.get_all_instruments()
+
+        else:
+
+            rows = self.service.search_instruments(text)
+
+        self.display_rows(rows)
+
+    # ======================================
+
+    def display_rows(self, rows):
 
         self.table.delete("1.0", "end")
 
@@ -84,8 +127,6 @@ class InstrumentPage(ctk.CTkFrame):
 
         self.table.insert("end", header)
         self.table.insert("end", "=" * 150 + "\n")
-
-        rows = self.service.get_all_instruments()
 
         for row in rows:
 
