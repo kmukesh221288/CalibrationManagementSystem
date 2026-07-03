@@ -21,6 +21,7 @@ class InstrumentPage(ctk.CTkFrame):
             ("frequency", "Frequency", 120),
             ("status", "Status", 110),
         ]
+        self.selected_row = None
 
         self.build_ui()
         self.load_table()
@@ -77,6 +78,7 @@ class InstrumentPage(ctk.CTkFrame):
             text="Edit Instrument",
             width=140,
             state="disabled",
+            command=self.open_edit_dialog,
         )
         self.edit_button.grid(row=0, column=3, sticky="e", padx=(0, 8), pady=10)
 
@@ -107,6 +109,8 @@ class InstrumentPage(ctk.CTkFrame):
         self.tree.tag_configure("evenrow", background="#ffffff")
         self.tree.tag_configure("oddrow", background="#f2f4f8")
 
+        self.tree.bind("<<TreeviewSelect>>", self.on_row_selected)
+
         vertical_scroll = ttk.Scrollbar(
             table_container,
             orient="vertical",
@@ -135,9 +139,22 @@ class InstrumentPage(ctk.CTkFrame):
         self.wait_window(dialog)
         self.load_table()
 
+    def open_edit_dialog(self):
+        if not self.selected_row:
+            return
+
+        dialog = AddInstrumentDialog(
+            self,
+            instrument_data=self.selected_row,
+            edit_mode=True,
+        )
+        self.wait_window(dialog)
+        self.load_table()
+
     def load_table(self):
         rows = self.service.get_all_instruments()
         self.display_rows(rows)
+        self.reset_selection()
 
     def search_data(self, event=None):
         search_text = self.search_entry.get().strip()
@@ -153,3 +170,16 @@ class InstrumentPage(ctk.CTkFrame):
         for index, row in enumerate(rows):
             row_tag = "evenrow" if index % 2 == 0 else "oddrow"
             self.tree.insert("", "end", values=row, tags=(row_tag,))
+
+    def on_row_selected(self, event=None):
+        selected = self.tree.selection()
+        if not selected:
+            self.reset_selection()
+            return
+
+        self.selected_row = self.tree.item(selected[0], "values")
+        self.edit_button.configure(state="normal")
+
+    def reset_selection(self):
+        self.selected_row = None
+        self.edit_button.configure(state="disabled")

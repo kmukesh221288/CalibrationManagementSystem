@@ -11,7 +11,6 @@ class InstrumentService:
     # =========================================================
 
     def get_all_instruments(self):
-
         cursor = self.db.cursor
 
         cursor.execute("""
@@ -40,7 +39,6 @@ class InstrumentService:
     # =========================================================
 
     def search_instruments(self, search_text):
-
         cursor = self.db.cursor
 
         keyword = f"%{search_text}%"
@@ -96,8 +94,7 @@ class InstrumentService:
         instrument_name,
         frequency
     ):
-
-        cursor = self.db.cursor()
+        cursor = self.db.cursor
 
         cursor.execute(
             """
@@ -111,11 +108,8 @@ class InstrumentService:
         machine = cursor.fetchone()
 
         if machine:
-
             machine_id = machine[0]
-
         else:
-
             cursor.execute(
                 """
                 INSERT INTO machines(
@@ -135,7 +129,6 @@ class InstrumentService:
                     department
                 )
             )
-
             machine_id = cursor.lastrowid
 
         cursor.execute(
@@ -148,7 +141,6 @@ class InstrumentService:
         )
 
         if cursor.fetchone():
-
             raise Exception(
                 "Instrument Code already exists."
             )
@@ -178,7 +170,101 @@ class InstrumentService:
         self.db.conn.commit()
 
     # =========================================================
+    # Update Instrument
+    # =========================================================
+
+    def update_instrument(
+        self,
+        old_instrument_code,
+        machine_code,
+        machine_name,
+        department,
+        instrument_code,
+        instrument_name,
+        frequency
+    ):
+        cursor = self.db.cursor
+
+        cursor.execute(
+            """
+            SELECT
+                i.id,
+                i.machine_id
+            FROM instruments i
+            WHERE i.instrument_code=?
+            """,
+            (old_instrument_code,)
+        )
+
+        instrument = cursor.fetchone()
+
+        if not instrument:
+            raise Exception("Instrument not found.")
+
+        instrument_id, current_machine_id = instrument
+
+        if instrument_code != old_instrument_code:
+            cursor.execute(
+                """
+                SELECT id
+                FROM instruments
+                WHERE instrument_code=?
+                """,
+                (instrument_code,)
+            )
+            if cursor.fetchone():
+                raise Exception("Instrument Code already exists.")
+
+        cursor.execute(
+            """
+            SELECT id
+            FROM machines
+            WHERE machine_code=?
+            """,
+            (machine_code,)
+        )
+
+        machine = cursor.fetchone()
+
+        if machine:
+            target_machine_id = machine[0]
+            cursor.execute(
+                """
+                UPDATE machines
+                SET machine_name=?, department=?
+                WHERE id=?
+                """,
+                (machine_name, department, target_machine_id)
+            )
+        else:
+            cursor.execute(
+                """
+                UPDATE machines
+                SET machine_code=?, machine_name=?, department=?
+                WHERE id=?
+                """,
+                (machine_code, machine_name, department, current_machine_id)
+            )
+            target_machine_id = current_machine_id
+
+        cursor.execute(
+            """
+            UPDATE instruments
+            SET machine_id=?, instrument_code=?, instrument_name=?, frequency=?
+            WHERE id=?
+            """,
+            (
+                target_machine_id,
+                instrument_code,
+                instrument_name,
+                frequency,
+                instrument_id,
+            )
+        )
+
+        self.db.conn.commit()
+
+    # =========================================================
 
     def close(self):
-
         self.db.close()
