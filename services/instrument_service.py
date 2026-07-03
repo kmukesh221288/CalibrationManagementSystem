@@ -226,6 +226,9 @@ class InstrumentService:
 
         machine = cursor.fetchone()
 
+        if machine and machine[0] != current_machine_id:
+            raise Exception("Machine Code already exists.")
+
         if machine:
             target_machine_id = machine[0]
             cursor.execute(
