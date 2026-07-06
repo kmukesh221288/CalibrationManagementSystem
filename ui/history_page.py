@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 import tkinter as tk
 from tkinter import messagebox, ttk
 
@@ -126,8 +127,14 @@ class HistoryPage(ctk.CTkFrame):
         self.open_certificate_button.configure(state="disabled")
 
         for index, row in enumerate(rows):
+            formatted_row = list(row)
+            for pos in (2, 3):
+                try:
+                    formatted_row[pos] = datetime.strptime(formatted_row[pos], "%Y-%m-%d").strftime("%d-%b-%Y")
+                except Exception:
+                    pass
             row_tag = "evenrow" if index % 2 == 0 else "oddrow"
-            self.tree.insert("", "end", values=row, tags=(row_tag,))
+            self.tree.insert("", "end", values=formatted_row, tags=(row_tag,))
 
     def on_row_selected(self, _event):
         selected = self.tree.selection()

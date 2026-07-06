@@ -1,5 +1,7 @@
 import customtkinter as ctk
+from datetime import datetime
 from tkinter import messagebox, ttk
+import os
 
 from services.report_service import ReportService
 
@@ -196,7 +198,13 @@ class ReportsPage(ctk.CTkFrame):
 
         self.report_tree.delete(*self.report_tree.get_children())
         for row in rows:
-            self.report_tree.insert("", "end", values=row)
+            formatted_row = list(row)
+            for pos in (4, 5):
+                try:
+                    formatted_row[pos] = datetime.strptime(formatted_row[pos], "%Y-%m-%d").strftime("%d-%b-%Y")
+                except Exception:
+                    pass
+            self.report_tree.insert("", "end", values=formatted_row)
 
     def export_excel(self):
         rows = [self.report_tree.item(item, "values") for item in self.report_tree.get_children()]
@@ -205,5 +213,9 @@ class ReportsPage(ctk.CTkFrame):
             return
 
         service = ReportService()
-        service.export_to_excel(rows)
-        messagebox.showinfo("Export Excel", "Excel report exported successfully.")
+        try:
+            file_path = service.export_to_excel(rows)
+            os.startfile(file_path)
+            messagebox.showinfo("Export Excel", "Excel report exported successfully.")
+        except Exception as e:
+            messagebox.showerror("Export Error", str(e))

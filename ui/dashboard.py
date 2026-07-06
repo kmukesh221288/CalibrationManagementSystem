@@ -1,4 +1,5 @@
 import customtkinter as ctk
+from datetime import datetime
 from tkinter import ttk
 from services.dashboard_service import DashboardService
 
@@ -75,7 +76,12 @@ class Dashboard(ctk.CTkFrame):
         scrollbar.pack(side="right", fill="y", pady=8)
 
         for row in self.service.get_recent_calibrations():
-            self.recent_tree.insert("", "end", values=row)
+            formatted_row = list(row)
+            try:
+                formatted_row[0] = datetime.strptime(formatted_row[0], "%Y-%m-%d").strftime("%d-%b-%Y")
+            except Exception:
+                pass
+            self.recent_tree.insert("", "end", values=formatted_row)
 
     def create_card(self, parent, title, value, row, column):
 

@@ -1,7 +1,9 @@
 import os
 import shutil
 import customtkinter as ctk
+from datetime import datetime
 from tkinter import filedialog, messagebox
+from tkcalendar import DateEntry
 from services.instrument_service import InstrumentService
 from services.calibration_service import CalibrationService
 
@@ -81,11 +83,13 @@ class CalibrationPage(ctk.CTkFrame):
         )
         calibration_date_label.grid(row=0, column=0, sticky="ew", pady=(10, 5))
 
-        self.calibration_date = ctk.CTkEntry(
+        self.calibration_date = DateEntry(
             right_frame,
-            placeholder_text="YYYY-MM-DD"
+            date_pattern="dd/mm/yyyy",
+            width=19
         )
         self.calibration_date.grid(row=1, column=0, sticky="ew", pady=5)
+        self.calibration_date.delete(0, "end")
 
         self.calibration_type = ctk.CTkComboBox(
             right_frame,
@@ -208,14 +212,20 @@ class CalibrationPage(ctk.CTkFrame):
 
     def upload_certificate(self):
         instrument_code = self.instrument_code.get()
-        calibration_date = self.calibration_date.get().strip()
+        calibration_date_raw = self.calibration_date.get().strip()
 
         if not instrument_code or instrument_code == "Select Instrument Code":
             messagebox.showerror("Validation Error", "Select an Instrument Code before uploading a certificate.")
             return
 
-        if not calibration_date:
+        if not calibration_date_raw:
             messagebox.showerror("Validation Error", "Enter Calibration Date before uploading a certificate.")
+            return
+
+        try:
+            calibration_date = datetime.strptime(calibration_date_raw, "%d/%m/%Y").strftime("%Y-%m-%d")
+        except ValueError:
+            messagebox.showerror("Validation Error", "Enter Calibration Date in dd/mm/yyyy format.")
             return
 
         file_path = filedialog.askopenfilename(
@@ -248,7 +258,7 @@ class CalibrationPage(ctk.CTkFrame):
 
     def save_calibration(self):
         instrument_code = self.instrument_code.get()
-        calibration_date = self.calibration_date.get().strip()
+        calibration_date_raw = self.calibration_date.get().strip()
         calibration_type = self.calibration_type.get().strip()
         agency = self.agency.get().strip()
         certificate_number = self.certificate_number.get().strip()
@@ -261,8 +271,14 @@ class CalibrationPage(ctk.CTkFrame):
             messagebox.showerror("Validation Error", "Instrument Code is required.")
             return
 
-        if not calibration_date:
+        if not calibration_date_raw:
             messagebox.showerror("Validation Error", "Calibration Date is required.")
+            return
+
+        try:
+            calibration_date = datetime.strptime(calibration_date_raw, "%d/%m/%Y").strftime("%Y-%m-%d")
+        except ValueError:
+            messagebox.showerror("Validation Error", "Enter Calibration Date in dd/mm/yyyy format.")
             return
 
         if not result:

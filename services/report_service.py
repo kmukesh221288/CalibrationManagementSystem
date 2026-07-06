@@ -66,7 +66,13 @@ class ReportService:
             cell.font = Font(bold=True)
 
         for row in rows:
-            sheet.append(list(row))
+            formatted_row = list(row)
+            for index in (4, 5):
+                try:
+                    formatted_row[index] = datetime.strptime(formatted_row[index], "%Y-%m-%d").strftime("%d-%b-%Y")
+                except Exception:
+                    pass
+            sheet.append(formatted_row)
 
         for column in sheet.columns:
             max_length = 0
