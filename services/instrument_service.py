@@ -34,6 +34,19 @@ class InstrumentService:
 
         return cursor.fetchall()
 
+    def get_all_instrument_codes(self):
+        cursor = self.db.cursor
+
+        cursor.execute(
+            """
+            SELECT instrument_code
+            FROM instruments
+            ORDER BY instrument_code
+            """
+        )
+
+        return [row[0] for row in cursor.fetchall()]
+
     # =========================================================
     # Search Instruments
     # =========================================================
@@ -80,6 +93,26 @@ class InstrumentService:
         ))
 
         return cursor.fetchall()
+
+    def get_instrument_details(self, instrument_code):
+        cursor = self.db.cursor
+
+        cursor.execute("""
+        SELECT
+            m.machine_code,
+            m.machine_name,
+            i.instrument_code,
+            i.instrument_name,
+            m.department,
+            i.frequency
+        FROM instruments i
+        JOIN machines m
+            ON i.machine_id = m.id
+        WHERE i.instrument_code = ?
+        """,
+        (instrument_code,))
+
+        return cursor.fetchone()
 
     # =========================================================
     # Add Instrument
@@ -266,6 +299,63 @@ class InstrumentService:
         )
 
         self.db.conn.commit()
+
+    # =========================================================
+    # Delete Instrument
+    # =========================================================
+
+    def delete_instrument(self, instrument_code):
+        cursor = self.db.cursor
+
+        try:
+            self.db.conn.execute("BEGIN")
+
+            cursor.execute(
+                """
+                SELECT id, machine_id
+                FROM instruments
+                WHERE instrument_code=?
+                """,
+                (instrument_code,)
+            )
+
+            instrument = cursor.fetchone()
+            if not instrument:
+                raise Exception("Instrument not found.")
+
+            instrument_id, machine_id = instrument
+
+            cursor.execute(
+                """
+                DELETE FROM instruments
+                WHERE id=?
+                """,
+                (instrument_id,)
+            )
+
+            cursor.execute(
+                """
+                SELECT COUNT(*)
+                FROM instruments
+                WHERE machine_id=?
+                """,
+                (machine_id,)
+            )
+
+            remaining = cursor.fetchone()[0]
+            if remaining == 0:
+                cursor.execute(
+                    """
+                    DELETE FROM machines
+                    WHERE id=?
+                    """,
+                    (machine_id,)
+                )
+
+            self.db.conn.commit()
+        except Exception:
+            self.db.conn.rollback()
+            raise
 
     # =========================================================
 

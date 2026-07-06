@@ -61,7 +61,7 @@ cursor.execute("""
 SELECT id,
        instrument_id,
        calibration_date,
-       due_date
+       next_due_date
 FROM calibration_history
 ORDER BY id DESC
 LIMIT 20

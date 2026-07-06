@@ -87,23 +87,27 @@ class Database:
 
             id INTEGER PRIMARY KEY AUTOINCREMENT,
 
-            instrument_id INTEGER,
+            instrument_id INTEGER NOT NULL,
 
-            calibration_date TEXT,
+            calibration_date TEXT NOT NULL,
 
-            due_date TEXT,
+            next_due_date TEXT NOT NULL,
 
-            remark TEXT,
+            calibration_type TEXT NOT NULL,
 
-            comments TEXT,
+            agency TEXT,
 
             certificate_number TEXT,
 
-            calibrated_by TEXT,
+            cost REAL,
 
-            attachment_path TEXT,
+            result TEXT,
 
-            created_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            remarks TEXT,
+
+            certificate_path TEXT,
+
+            created_on TEXT,
 
             FOREIGN KEY(instrument_id)
             REFERENCES instruments(id)

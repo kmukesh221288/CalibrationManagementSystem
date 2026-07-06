@@ -1,5 +1,6 @@
 import customtkinter as ctk
 
+from database.db_manager import Database
 from controllers.navigation_controller import NavigationController
 
 from ui.sidebar import Sidebar
@@ -41,6 +42,7 @@ class CalibrationApp(ctk.CTk):
         Sidebar(self, self.controller)
 
         content = ctk.CTkFrame(self)
+        content.controller = self.controller
 
         content.grid(row=0, column=1, sticky="nsew")
 
@@ -70,6 +72,9 @@ class CalibrationApp(ctk.CTk):
 
         self.controller.show_page("dashboard")
 
+
+db = Database()
+db.create_tables()
 
 app = CalibrationApp()
 

@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import messagebox, ttk
 
 import customtkinter as ctk
 
@@ -87,6 +87,7 @@ class InstrumentPage(ctk.CTkFrame):
             text="Delete Instrument",
             width=140,
             state="disabled",
+            command=self.delete_instrument,
         )
         self.delete_button.grid(row=0, column=4, sticky="e", padx=(0, 10), pady=10)
 
@@ -179,7 +180,39 @@ class InstrumentPage(ctk.CTkFrame):
 
         self.selected_row = self.tree.item(selected[0], "values")
         self.edit_button.configure(state="normal")
+        self.delete_button.configure(state="normal")
+
+    def delete_instrument(self):
+        if not self.selected_row:
+            messagebox.showwarning(
+                "No Selection",
+                "Please select an instrument to delete."
+            )
+            return
+
+        instrument_code = self.selected_row[2]
+        confirm = messagebox.askyesno(
+            "Delete Instrument",
+            f"Are you sure you want to delete Instrument {instrument_code}?"
+        )
+
+        if not confirm:
+            return
+
+        try:
+            self.service.delete_instrument(instrument_code)
+            messagebox.showinfo(
+                "Success",
+                "Instrument deleted successfully."
+            )
+            self.load_table()
+        except Exception as e:
+            messagebox.showerror(
+                "Error",
+                str(e)
+            )
 
     def reset_selection(self):
         self.selected_row = None
         self.edit_button.configure(state="disabled")
+        self.delete_button.configure(state="disabled")

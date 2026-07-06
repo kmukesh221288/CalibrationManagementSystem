@@ -15,7 +15,12 @@ class Dashboard(ctk.CTkFrame):
 
     def build_ui(self):
 
-        data = self.service.get_counts()
+        total_instruments = self.service.get_total_instruments()
+        total_calibrations = self.service.get_total_calibrations()
+        due_this_month = self.service.get_due_this_month()
+        overdue_count = self.service.get_overdue_count()
+        certificate_count = self.service.get_certificate_count()
+        total_cost = self.service.get_total_cost()
 
         title = ctk.CTkLabel(
             self,
@@ -24,76 +29,57 @@ class Dashboard(ctk.CTkFrame):
         )
         title.pack(anchor="w", pady=(10, 20))
 
-        # ================= Cards =================
-
         cards = ctk.CTkFrame(self)
-        cards.pack(fill="x")
+        cards.pack(fill="both", expand=True)
+        cards.grid_columnconfigure((0, 1, 2), weight=1)
+        cards.grid_rowconfigure((0, 1), weight=1)
 
-        cards.grid_columnconfigure((0, 1, 2, 3), weight=1)
+        self.create_card(cards, "Total Instruments", total_instruments, 0, 0)
+        self.create_card(cards, "Total Calibrations", total_calibrations, 0, 1)
+        self.create_card(cards, "Due This Month", due_this_month, 0, 2)
+        self.create_card(cards, "Overdue", overdue_count, 1, 0)
+        self.create_card(cards, "Certificates Uploaded", certificate_count, 1, 1)
+        self.create_card(cards, "Total Calibration Cost", total_cost, 1, 2)
 
-        self.create_card(cards, "🏭 Machines", data["machines"], 0)
-        self.create_card(cards, "🔧 Instruments", data["instruments"], 1)
-        self.create_card(cards, "📅 Due in 7 Days", data["due_next7"], 2)
-        self.create_card(cards, "❌ Overdue", data["overdue"], 3)
-
-        # ================= Upcoming =================
-
-        title2 = ctk.CTkLabel(
-            self,
-            text="Upcoming Calibrations",
-            font=("Arial", 22, "bold")
-        )
-        title2.pack(anchor="w", pady=(30, 10))
-
-        table = ctk.CTkFrame(self)
-        table.pack(fill="both", expand=True)
-
-        headers = ["Machine", "Instrument", "Due Date"]
-
-        for col, text in enumerate(headers):
-            lbl = ctk.CTkLabel(
-                table,
-                text=text,
-                font=("Arial", 16, "bold")
-            )
-            lbl.grid(row=0, column=col, padx=20, pady=10, sticky="w")
-
-        upcoming = self.service.get_upcoming_calibrations()
-
-        for r, row in enumerate(upcoming, start=1):
-            for c, value in enumerate(row):
-                lbl = ctk.CTkLabel(
-                    table,
-                    text=str(value)
-                )
-                lbl.grid(row=r, column=c, padx=20, pady=6, sticky="w")
-
-    def create_card(self, parent, title, value, column):
+    def create_card(self, parent, title, value, row, column):
 
         card = ctk.CTkFrame(
             parent,
-            height=120,
-            corner_radius=15
+            corner_radius=20,
+            fg_color="#ffffff",
+            border_width=1,
+            border_color="#d1d5db"
         )
 
         card.grid(
-            row=0,
+            row=row,
             column=column,
-            padx=10,
-            pady=10,
+            padx=12,
+            pady=12,
             sticky="nsew"
         )
+
+        card.grid_rowconfigure(0, weight=0)
+        card.grid_rowconfigure(1, weight=1)
+        card.grid_columnconfigure(0, weight=1)
 
         lbl_title = ctk.CTkLabel(
             card,
             text=title,
-            font=("Arial", 18, "bold")
+            font=("Segoe UI", 16, "bold"),
+            anchor="w"
         )
-        lbl_title.pack(pady=(20, 10))
+        lbl_title.grid(row=0, column=0, sticky="w", padx=16, pady=(16, 8))
 
         lbl_value = ctk.CTkLabel(
             card,
             text=str(value),
-            font=("Arial", 34, "bold")
+            font=("Segoe UI", 30, "bold"),
+            anchor="w"
         )
-        lbl_value.pack()
+        lbl_value.grid(row=1, column=0, sticky="w", padx=16, pady=(0, 20))
+
+    def refresh(self):
+        for widget in self.winfo_children():
+            widget.destroy()
+        self.build_ui()

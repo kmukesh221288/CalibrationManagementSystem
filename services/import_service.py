@@ -219,7 +219,7 @@ class ImportService:
 
                 calibration_date,
 
-                due_date,
+                next_due_date,
 
                 remark,
 
