@@ -1,4 +1,5 @@
 import customtkinter as ctk
+from tkinter import ttk
 from services.dashboard_service import DashboardService
 
 
@@ -40,6 +41,41 @@ class Dashboard(ctk.CTkFrame):
         self.create_card(cards, "Overdue", overdue_count, 1, 0)
         self.create_card(cards, "Certificates Uploaded", certificate_count, 1, 1)
         self.create_card(cards, "Total Calibration Cost", total_cost, 1, 2)
+
+        recent_title = ctk.CTkLabel(
+            self,
+            text="Recent Calibration Activity",
+            font=("Arial", 22, "bold")
+        )
+        recent_title.pack(anchor="w", pady=(30, 20))
+
+        recent_frame = ctk.CTkFrame(self)
+        recent_frame.pack(fill="both", expand=True)
+
+        columns = ["Calibration Date", "Instrument Code", "Machine Code", "Result"]
+        self.recent_tree = ttk.Treeview(
+            recent_frame,
+            columns=columns,
+            show="headings",
+            height=10
+        )
+
+        for col in columns:
+            self.recent_tree.heading(col, text=col)
+            self.recent_tree.column(col, width=150, anchor="w")
+
+        scrollbar = ttk.Scrollbar(
+            recent_frame,
+            orient="vertical",
+            command=self.recent_tree.yview
+        )
+        self.recent_tree.configure(yscrollcommand=scrollbar.set)
+
+        self.recent_tree.pack(side="left", fill="both", expand=True, padx=(0, 8), pady=8)
+        scrollbar.pack(side="right", fill="y", pady=8)
+
+        for row in self.service.get_recent_calibrations():
+            self.recent_tree.insert("", "end", values=row)
 
     def create_card(self, parent, title, value, row, column):
 

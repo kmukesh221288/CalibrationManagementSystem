@@ -50,3 +50,17 @@ class DashboardService:
             "SELECT IFNULL(SUM(cost), 0) FROM calibration_history"
         )
         return cursor.fetchone()[0]
+
+    def get_recent_calibrations(self):
+        cursor = self.db.cursor
+        cursor.execute(
+            """
+            SELECT calibration_date, i.instrument_code, m.machine_code, h.result
+            FROM calibration_history h
+            JOIN instruments i ON i.id = h.instrument_id
+            LEFT JOIN machines m ON m.id = i.machine_id
+            ORDER BY h.calibration_date DESC
+            LIMIT 10
+            """
+        )
+        return cursor.fetchall()

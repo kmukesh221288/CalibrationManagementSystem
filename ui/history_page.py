@@ -1,3 +1,4 @@
+import os
 import tkinter as tk
 from tkinter import messagebox, ttk
 
@@ -67,6 +68,15 @@ class HistoryPage(ctk.CTkFrame):
         )
         self.refresh_button.grid(row=0, column=1, sticky="e", padx=(0, 10), pady=10)
 
+        self.open_certificate_button = ctk.CTkButton(
+            top_frame,
+            text="Open Certificate",
+            width=140,
+            state="disabled",
+            command=self.open_certificate
+        )
+        self.open_certificate_button.grid(row=0, column=2, sticky="e", padx=(0, 10), pady=10)
+
         top_frame.grid_columnconfigure(0, weight=1)
 
         table_container = ctk.CTkFrame(self)
@@ -93,6 +103,7 @@ class HistoryPage(ctk.CTkFrame):
         )
 
         self.tree.configure(yscrollcommand=vertical_scroll.set)
+        self.tree.bind("<<TreeviewSelect>>", self.on_row_selected)
 
         self.tree.grid(row=0, column=0, sticky="nsew")
         vertical_scroll.grid(row=0, column=1, sticky="ns")
@@ -112,7 +123,35 @@ class HistoryPage(ctk.CTkFrame):
 
     def display_rows(self, rows):
         self.tree.delete(*self.tree.get_children())
+        self.open_certificate_button.configure(state="disabled")
 
         for index, row in enumerate(rows):
             row_tag = "evenrow" if index % 2 == 0 else "oddrow"
             self.tree.insert("", "end", values=row, tags=(row_tag,))
+
+    def on_row_selected(self, _event):
+        selected = self.tree.selection()
+        if selected:
+            self.open_certificate_button.configure(state="normal")
+        else:
+            self.open_certificate_button.configure(state="disabled")
+
+    def open_certificate(self):
+        selected = self.tree.selection()
+        if not selected:
+            return
+
+        values = self.tree.item(selected[0], "values")
+        certificate_path = values[9] if len(values) > 9 else None
+
+        if not certificate_path:
+            messagebox.showerror("Error", "Certificate file not found.")
+            return
+
+        if os.path.exists(certificate_path):
+            try:
+                os.startfile(certificate_path)
+            except Exception as exc:
+                messagebox.showerror("Error", str(exc))
+        else:
+            messagebox.showerror("Error", "Certificate file not found.")
