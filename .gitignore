@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Virtual Environment
+.venv/
+
+# Build files
+build/
+dist/
+*.spec
+
+# Generated folders
+exports/
+backups/
+
+# IDE
+.vscode/
+
+# Windows
+Thumbs.db
+.DS_Store
+
+# Logs
+*.log
