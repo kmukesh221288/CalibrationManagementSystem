@@ -1,9 +1,12 @@
+import os
 import customtkinter as ctk
 import tkinter as tk
+from tkinter import filedialog, messagebox
 
 from database.db_manager import Database
 from controllers.navigation_controller import NavigationController
 
+from services.database_service import DatabaseService
 from services.reminder_service import ReminderService
 
 from ui.sidebar import Sidebar
@@ -42,6 +45,9 @@ class CalibrationApp(ctk.CTk):
 
         self.controller = NavigationController()
 
+        self.database_service = DatabaseService()
+        self._create_menu()
+
         Sidebar(self, self.controller)
 
         content = ctk.CTkFrame(self)
@@ -76,6 +82,44 @@ class CalibrationApp(ctk.CTk):
         self.controller.show_page("dashboard")
 
         self.after(100, self.show_reminder_popup)
+
+    def _create_menu(self):
+        menubar = tk.Menu(self)
+        self.config(menu=menubar)
+
+        tools_menu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Tools", menu=tools_menu)
+
+        tools_menu.add_command(label="Backup Database", command=self._backup_database)
+        tools_menu.add_command(label="Restore Database", command=self._restore_database)
+        tools_menu.add_command(label="Open Backup Folder", command=self._open_backup_folder)
+
+    def _backup_database(self):
+        try:
+            backup_path = self.database_service.backup_database()
+            backup_name = os.path.basename(backup_path)
+            messagebox.showinfo("Backup Created", f"Database backup created successfully.\n{backup_name}")
+        except Exception as exc:
+            messagebox.showerror("Backup Failed", str(exc))
+
+    def _restore_database(self):
+        backup_file = filedialog.askopenfilename(
+            title="Select Backup Database",
+            filetypes=[("Database Files", "*.db"), ("All Files", "*.*")]
+        )
+        if not backup_file:
+            return
+
+        try:
+            self.database_service.restore_database(backup_file)
+            messagebox.showinfo("Restore Successful", "Database restored successfully.")
+        except Exception as exc:
+            messagebox.showerror("Restore Failed", str(exc))
+
+    def _open_backup_folder(self):
+        backup_dir = os.path.abspath("backups")
+        os.makedirs(backup_dir, exist_ok=True)
+        os.startfile(backup_dir)
 
     def show_reminder_popup(self):
         reminder_service = ReminderService()
